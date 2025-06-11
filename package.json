@@ -1,0 +1,23 @@
+{
+  "name": "simon-memory-game",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Drake-Designer/Simon-Memory-Game.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Drake-Designer/Simon-Memory-Game/issues"
+  },
+  "homepage": "https://github.com/Drake-Designer/Simon-Memory-Game#readme",
+  "description": "",
+  "devDependencies": {
+    "jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0"
+  }
+}
