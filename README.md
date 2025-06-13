@@ -18,7 +18,7 @@ A simple memory game in which the player repeats a sequence of randomly colored 
 
 ## 🌐 Live Site
 
-👉 [Play the Simon Memory Game](https://drake-designer.github.io/Simon-Memory-Game)
+👉 [Play Simon Memory Game](https://drake-designer.github.io/Simon-Memory-Game)
 
 ---
 
