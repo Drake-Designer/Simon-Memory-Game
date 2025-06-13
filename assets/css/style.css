@@ -24,6 +24,7 @@ h2 {
   border-radius: 50%;
   position: absolute;
   cursor: pointer;
+  transition: opacity 0.3s ease-in-out;
 }
 .circle1 {
   height: 500px;
