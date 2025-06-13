@@ -2,83 +2,117 @@
  * @jest-environment jsdom
  */
 
-const { game, newGame, showScore, addTurn, lightsOn } = require('../js/script.js');
+const fs = require('fs');
+const path = require('path');
+
+let SimonGame, newGame, nextRound, playerTurnMoves;
 
 beforeAll(() => {
-  let fs = require('fs');
-  let fileContents = fs.readFileSync('index.html', 'utf-8');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../index.html'), 'utf-8');
   document.open();
-  document.write(fileContents);
+  document.write(html);
   document.close();
+
+  jest.isolateModules(() => {
+    const script = require('../js/script.js');
+    SimonGame = script.SimonGame;
+    newGame = script.newGame;
+    nextRound = script.nextRound;
+    playerTurnMoves = script.playerTurnMoves;
+  });
+
+  jest.spyOn(window, 'alert').mockImplementation(() => {});
+});
+
+beforeEach(() => {
+  jest.useFakeTimers();
+  SimonGame.gameMoves = [];
+  SimonGame.playerMoves = [];
+  SimonGame.playerTurn = false;
+  SimonGame.gameScore = 0;
+  document.getElementById('score').textContent = '0';
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
+describe('pre-game', () => {
+  test('clicking buttons before newGame does nothing', () => {
+    document.getElementById('button2').click();
+    expect(SimonGame.playerMoves).toEqual([]);
+  });
 });
 
 describe('game object contains correct keys', () => {
-  test('score key exists', () => {
-    expect('score' in game).toBe(true);
+  test('all expected keys exist', () => {
+    ['gameMoves', 'playerMoves', 'playerTurn', 'gameScore', 'flashSpeed', 'turnDelay', 'buttons'].forEach((key) => {
+      expect(key in SimonGame).toBe(true);
+    });
   });
-  test('currentGame key exists', () => {
-    expect('currentGame' in game).toBe(true);
-  });
-  test('playerMoves key exists', () => {
-    expect('playerMoves' in game).toBe(true);
-  });
-  test('choices key exists', () => {
-    expect('choices' in game).toBe(true);
-  });
-  test('choices contain correct ids', () => {
-    expect(game.choices).toEqual(['button1', 'button2', 'button3', 'button4']);
+  test('buttons map has four entries', () => {
+    expect(Object.keys(SimonGame.buttons)).toEqual(['1', '2', '3', '4']);
   });
 });
 
 describe('newGame works correctly', () => {
   beforeAll(() => {
-    game.score = 42;
-    game.playerMoves = ['button1', 'button2'];
-    game.currentGame = ['button1', 'button2'];
-    document.getElementById('score').innerText = '42';
+    SimonGame.gameMoves = [1, 2, 3];
+    SimonGame.playerMoves = [2];
+    SimonGame.playerTurn = true;
+    SimonGame.gameScore = 5;
+    document.getElementById('score').textContent = '5';
     newGame();
   });
-  test('should set game score to zero', () => {
-    expect(game.score).toEqual(0);
+
+  test('resets moves and turn', () => {
+    expect(SimonGame.gameMoves).toEqual([expect.any(Number)]);
+    expect(SimonGame.playerMoves).toEqual([]);
+    expect(SimonGame.playerTurn).toBe(false);
   });
-  test('should display 0 for the element with id of score', () => {
-    expect(document.getElementById('score').innerText).toEqual(0);
-  });
-  test('should clear the player moves array', () => {
-    expect(game.playerMoves.length).toBe(0);
-  });
-  test("should add one move to the computer's game array", () => {
-    expect(game.currentGame.length).toBe(1);
+
+  test('resets score internally and in UI', () => {
+    expect(SimonGame.gameScore).toBe(0);
+    expect(document.getElementById('score').textContent).toBe('0');
   });
 });
 
 describe('gameplay works correctly', () => {
   beforeEach(() => {
-    game.score = 0;
-    game.currentGame = [];
-    game.playerMoves = [];
-    addTurn();
+    nextRound();
   });
-  afterEach(() => {
-    game.score = 0;
-    game.currentGame = [];
-    game.playerMoves = [];
+
+  test('nextRound adds one move', () => {
+    expect(SimonGame.gameMoves.length).toBe(1);
   });
-  test('addTurn adds a new turn to the game', () => {
-    addTurn();
-    expect(game.currentGame.length).toBe(2);
+
+  test('playerTurn false during sequence', () => {
+    expect(SimonGame.playerTurn).toBe(false);
+    document.getElementById('button' + SimonGame.gameMoves[0]).click();
+    expect(SimonGame.playerMoves).toEqual([]);
   });
-  test('should add correct class to light up the buttons', () => {
-    let button = document.getElementById(game.currentGame[0]);
-    lightsOn(game.currentGame[0]);
-    expect(button.classList).toContain(game.currentGame[0] + 'light');
+
+  test('playerTurn true after delay', () => {
+    const total = SimonGame.flashSpeed * SimonGame.gameMoves.length + SimonGame.turnDelay;
+    jest.advanceTimersByTime(total);
+    expect(SimonGame.playerTurn).toBe(true);
+  });
+
+  test('playerTurnMoves records correct move and increments score', () => {
+    jest.advanceTimersByTime(SimonGame.flashSpeed * 1 + SimonGame.turnDelay);
+    expect(SimonGame.playerTurn).toBe(true);
+    const move = SimonGame.gameMoves[0];
+    playerTurnMoves(move);
+    expect(SimonGame.playerMoves).toEqual([move]);
+    expect(SimonGame.gameScore).toBe(1);
+  });
+
+  test('playerTurnMoves resets on wrong move', () => {
+    jest.advanceTimersByTime(SimonGame.flashSpeed * 1 + SimonGame.turnDelay);
+    expect(SimonGame.playerTurn).toBe(true);
+    const spy = jest.spyOn(global, 'newGame');
+    playerTurnMoves((SimonGame.gameMoves[0] % 4) + 1);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
-
-// Function List:
-// newGame
-// addTurn
-// showTurns
-// lightsOn
-// playerTurn
-// ShowScore

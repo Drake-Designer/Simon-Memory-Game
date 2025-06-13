@@ -96,3 +96,11 @@ function playerTurnMoves(move) {
     setTimeout(nextRound, SimonGame.flashSpeed + SimonGame.turnDelay);
   }
 }
+
+// Export for Jest tests
+module.exports = {
+  SimonGame,
+  newGame,
+  nextRound,
+  playerTurnMoves,
+};
